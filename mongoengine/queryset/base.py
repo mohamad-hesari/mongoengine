@@ -193,6 +193,23 @@ class BaseQuerySet(object):
         message = u'%d items returned, instead of 1' % queryset.count()
         raise queryset._document.MultipleObjectsReturned(message)
 
+    def find_and_modify(self, query, update, upsert=False, new=False):
+        """
+        find the matching query and updated atomic
+        this is a equal to command findAndModify of shell
+        """
+        db = self._document._get_db()
+        result = db.command('findAndModify', self._document._meta['collection'],
+                            query=query,
+                            update=update,
+                            upsert=upsert,
+                            new=new)
+        if result['ok'] == 1 and result['value'] is not None:
+            doc = self._document._from_son(result['value'],
+                                           _auto_dereference=self._auto_dereference)
+            return doc
+        return None
+
     def create(self, **kwargs):
         """Create new object. Returns the saved object instance.
 
